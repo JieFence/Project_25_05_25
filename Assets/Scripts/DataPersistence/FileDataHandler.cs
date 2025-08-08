@@ -20,6 +20,12 @@ public class FileDataHandler
     }
     public GameData Load(string profileId)
     {
+        // base case - if the profileId is null or empty, return right away
+        if(profileId == null || profileId == "")
+        {
+            Debug.LogError("Profile ID is null or empty. Cannot load game data.");
+            return null;
+        }
         // using the Combine method to account for different OS path separators
         string fullPath = Path.Combine(dataDirPath, profileId, dataFileName);
         GameData loadedData = null;
@@ -55,6 +61,13 @@ public class FileDataHandler
     }
     public void Save(GameData data, string profileId)
     {
+        // base case - if the profileId is null or empty, return right away
+        if (profileId == null || profileId == "")
+        {
+            Debug.LogError("Profile ID is null or empty. Cannot save game data.");
+            return;
+        }
+
         // using the Combine method to account for different OS path separators
         string fullPath = Path.Combine(dataDirPath, profileId, dataFileName);
         try
@@ -101,7 +114,7 @@ public class FileDataHandler
             string fullPath = Path.Combine(dataDirPath, profileId, dataFileName);
             if (!File.Exists(fullPath))
             {
-                Debug.LogWarning($"Skipping profile {profileId} because the data file does not exist.");
+                Debug.LogWarning($"Skipping profile '{profileId}' because the data file does not exist.");
                 continue;
             }
 
@@ -119,6 +132,39 @@ public class FileDataHandler
             }
         }
         return profileDictionary;
+    }
+
+    public string GetMostRecentlySavedProfileId()
+    {
+        string mostRecentProfileId = null;
+
+        Dictionary<string, GameData> profilesGameData = LoadAllProfiles();
+        foreach (KeyValuePair<string, GameData> pair in profilesGameData)
+        {
+            string profileId = pair.Key;
+            GameData gameData = pair.Value;
+            if (gameData == null)
+            {
+                continue; // skip if gameData is null
+            }
+
+            // if this is the first profile or if this profile's last save time is more recent than the current most recent
+            if (mostRecentProfileId == null)
+            {
+                mostRecentProfileId = profileId;
+            }
+            // otherwise, compare the last save times
+            else
+            {
+                DateTime mostRecentSaveTime = DateTime.FromBinary(profilesGameData[mostRecentProfileId].lastSaveTime);
+                DateTime newDataTime = DateTime.FromBinary(gameData.lastSaveTime);
+                if (newDataTime > mostRecentSaveTime)
+                {
+                    mostRecentProfileId = profileId;
+                }
+            }
+        }
+        return mostRecentProfileId;
     }
 
     /// <summary>

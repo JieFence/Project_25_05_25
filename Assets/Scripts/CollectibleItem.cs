@@ -31,7 +31,7 @@ public class CollectibleItem : MonoBehaviour,IDataPersistence
         }
     }
 
-    public void SaveGame(ref GameData gameData)
+    public void SaveGame(GameData gameData)
     {
         if (gameData.collectedItems.ContainsKey(id))
         {

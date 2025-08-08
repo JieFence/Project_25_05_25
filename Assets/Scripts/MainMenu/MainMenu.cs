@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.SearchService;
@@ -5,11 +6,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class MainMenu : MonoBehaviour
+public class MainMenu : Menu
 {
+    [Header("Menu Navigation")]
+    [SerializeField] private SaveSlotsMenu saveSlotsMenu;
     [Header("Menu Buttons")]
     [SerializeField] private Button newGameButton;
     [SerializeField] private Button continueGameButton;
+    [SerializeField] private Button loadGameButton;
 
     private void Start()
     {
@@ -17,29 +21,44 @@ public class MainMenu : MonoBehaviour
         if (!DataPersistenceManager.instance.HasGameData())
         {
             continueGameButton.interactable = false;
+            loadGameButton.interactable = false;
         }
     }
     public void OnNewGameClicked()
     {
-        DisableMenuButtons();
-        // create a new game - which will reset all game data
-        DataPersistenceManager.instance.NewGame();
-        // load the gameplay scene - which will in turn save the game data because of 
-        // OnSceneUnloaded() in DataPersistenceManager
-        SceneManager.LoadSceneAsync("Scene01");
+        DeactivateMenu();
+        saveSlotsMenu.ActivateMenu(false);
     }
+
+    public void OnLoadGameClicked()
+    {
+        DeactivateMenu();
+        saveSlotsMenu.ActivateMenu(true);
+    }
+
     public void OnContinueGameClicked()
     {
         DisableMenuButtons();
+        //save the game anytime before loading the scene
+        DataPersistenceManager.instance.SaveGame();
+
         // load the gameplay scene - which will in turn load the game data because of 
         // OnSceneLoaded() in DataPersistenceManager
         SceneManager.LoadSceneAsync("Scene01");
     }
 
-
     private void DisableMenuButtons()
     {
         newGameButton.interactable = false;
         continueGameButton.interactable = false;
+    }
+
+    public void ActivateMenu()
+    {
+        gameObject.SetActive(true);
+    }   
+    public void DeactivateMenu()
+    {
+        gameObject.SetActive(false);
     }
 }

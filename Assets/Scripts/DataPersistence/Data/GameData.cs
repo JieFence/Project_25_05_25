@@ -5,6 +5,7 @@ using UnityEngine;
 [System.Serializable]
 public class GameData
 {
+    public long lastSaveTime;
     public int deathCount;
     public Vector3 playerPosition;
     public SerializableDictionary<string, bool> collectedItems;

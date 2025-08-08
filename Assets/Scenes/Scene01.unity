@@ -789,6 +789,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: DataPersistenceManager
       objectReference: {fileID: 0}
+    - target: {fileID: 5531537822533072654, guid: af0adb7bcabf5a546badfda87505f33e, type: 3}
+      propertyPath: disablePersistence
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5531537822533072654, guid: af0adb7bcabf5a546badfda87505f33e, type: 3}
+      propertyPath: initializeDataIfNull
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5531537822533072654, guid: af0adb7bcabf5a546badfda87505f33e, type: 3}
+      propertyPath: overrideSelectedProfileId
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7866992237210640230, guid: af0adb7bcabf5a546badfda87505f33e, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.39688823

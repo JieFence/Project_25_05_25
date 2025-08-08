@@ -28,7 +28,7 @@ public class Player : MonoBehaviour, IDataPersistence
         transform.position = gameData.playerPosition;
     }
 
-    public void SaveGame(ref GameData gameData)
+    public void SaveGame(GameData gameData)
     {
         gameData.deathCount = deathCount;
         gameData.playerPosition = transform.position;
