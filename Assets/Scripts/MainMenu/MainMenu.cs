@@ -17,6 +17,10 @@ public class MainMenu : Menu
 
     private void Start()
     {
+        DisableButtonsDependingOnData();
+    }
+    private void DisableButtonsDependingOnData()
+    {
         // if there is no game data, disable the continue button
         if (!DataPersistenceManager.instance.HasGameData())
         {
@@ -24,6 +28,7 @@ public class MainMenu : Menu
             loadGameButton.interactable = false;
         }
     }
+
     public void OnNewGameClicked()
     {
         DeactivateMenu();
@@ -56,6 +61,7 @@ public class MainMenu : Menu
     public void ActivateMenu()
     {
         gameObject.SetActive(true);
+        DisableButtonsDependingOnData();
     }   
     public void DeactivateMenu()
     {

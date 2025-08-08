@@ -11,6 +11,7 @@ public class FileDataHandler
     private string dataFileName = "";
     private bool useEncryption = false;
     private readonly string encryptionCodeWord = "jiefence";
+    private readonly string backupExtension = ".bak";
 
     public FileDataHandler(string dataDirPath, string dataFileName, bool useEncryption)
     {
@@ -18,10 +19,10 @@ public class FileDataHandler
         this.dataFileName = dataFileName;
         this.useEncryption = useEncryption;
     }
-    public GameData Load(string profileId)
+    public GameData Load(string profileId,bool allowRestoreFromBackup = true)
     {
         // base case - if the profileId is null or empty, return right away
-        if(profileId == null || profileId == "")
+        if (profileId == null || profileId == "")
         {
             Debug.LogError("Profile ID is null or empty. Cannot load game data.");
             return null;
@@ -54,7 +55,20 @@ public class FileDataHandler
             }
             catch (Exception e)
             {
-                Debug.LogError("Failed to load game data: " + fullPath + "\n" + e);
+                if (allowRestoreFromBackup)
+                {
+                    Debug.LogError("Failed to load game data. Attempting to roll back to backup file.\n" + e);
+                    bool rollbackSuccess = AttemptRollback(fullPath);
+                    if (rollbackSuccess)
+                    {
+                        loadedData = Load(profileId,false); // try to load again after rolling back
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Error occured when trying to load game data from file: " + fullPath + "\n" + e);
+                }
+                
             }
         }
         return loadedData;
@@ -70,6 +84,7 @@ public class FileDataHandler
 
         // using the Combine method to account for different OS path separators
         string fullPath = Path.Combine(dataDirPath, profileId, dataFileName);
+        string backupFilePath = fullPath + backupExtension;
         try
         {
             // create the directory if it doesn't exist
@@ -92,12 +107,51 @@ public class FileDataHandler
                     writer.Write(dataToStore);
                 }
             }
+
+            // verify the newly saved file can be loaded successfully
+            GameData verifiedGameData = Load(profileId);
+            if (verifiedGameData != null)
+            {
+                File.Copy(fullPath, backupFilePath, true);
+            }
+            else
+            {
+                throw new Exception("Save file could not be verified and backup was not created.");
+            }
         }
         catch (Exception e)
         {
             Debug.LogError("Failed to save game data: " + fullPath + "\n" + e);
         }
     }
+
+    public void Delete(string profileId)
+    {
+        // base case - if the profileId is null or empty, return right away
+        if (profileId == null || profileId == "")
+        {
+            return;
+        }
+
+        // using the Combine method to account for different OS path separators
+        string fullPath = Path.Combine(dataDirPath, profileId, dataFileName);
+        try
+        {
+            if (File.Exists(fullPath))
+            {
+                Directory.Delete(Path.GetDirectoryName(fullPath), true);
+            }
+            else
+            {
+                Debug.LogWarning("Tried to delete profile but data file does not exist: " + fullPath);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Failed to delete game data: " + fullPath + "\n" + e);
+        }
+    }
+
 
     public Dictionary<string, GameData> LoadAllProfiles()
     {
@@ -122,7 +176,7 @@ public class FileDataHandler
             GameData profileData = Load(profileId);
             // defensive programming: check if the profile data is null
             // beacause if it is then something went wrong and we should let ourselves know
-            if(profileData != null)
+            if (profileData != null)
             {
                 profileDictionary.Add(profileId, profileData);
             }
@@ -180,5 +234,29 @@ public class FileDataHandler
             modifiedData += (char)(data[i] ^ encryptionCodeWord[i % encryptionCodeWord.Length]);
         }
         return modifiedData;
+    }
+
+    private bool AttemptRollback(string fullPath)
+    {
+        bool success = false;
+        string backupFilePath = fullPath + backupExtension;
+        try
+        {
+            if (File.Exists(backupFilePath))
+            {
+                File.Copy(backupFilePath, fullPath, true);
+                success = true;
+                Debug.Log("Successfully rolled back to backup file: " + backupFilePath);
+            }
+            else
+            {
+                throw new Exception("No backup file found to roll back to: " + backupFilePath);
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Failed to roll back to backup file: " + backupFilePath + "\n" + e);
+        }
+        return success;
     }
 }

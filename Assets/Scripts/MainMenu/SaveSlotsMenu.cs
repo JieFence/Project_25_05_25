@@ -10,7 +10,11 @@ public class SaveSlotsMenu : Menu
     [SerializeField] private MainMenu mainMenu;
 
     [Header("Menu Buttons")]
-    [SerializeField] private Button backButton; 
+    [SerializeField] private Button backButton;
+
+    [Header("Confirmation Popup")]
+    [SerializeField] private ConfirmationPopupMenu confirmationPopupMenu;
+
     private SaveSlot[] saveSlots;
 
     private bool isLoadingGame = false;
@@ -24,17 +28,58 @@ public class SaveSlotsMenu : Menu
     {
         DisableMenuButtons();
 
-        DataPersistenceManager.instance.ChangeSelectedProfileId(saveSlot.GetProfileId());
-
-        if (!isLoadingGame)
+        if (isLoadingGame)
         {
-            DataPersistenceManager.instance.NewGame();
+            DataPersistenceManager.instance.ChangeSelectedProfileId(saveSlot.GetProfileId());
+            SaveGameAndLoadScene();
         }
+        else if (saveSlot.hasData)
+        {
+            confirmationPopupMenu.ActivateMenu(
+                "Starting a new game will overwrite the current save data. Are you sure you want to continue?",
+                () =>
+                {
+                    DataPersistenceManager.instance.ChangeSelectedProfileId(saveSlot.GetProfileId());
+                    DataPersistenceManager.instance.NewGame();
+                    SaveGameAndLoadScene();
+                }
+                , () =>
+                {
+                    ActivateMenu(isLoadingGame);
+                }
+            );
+        }
+        else
+        {
+            DataPersistenceManager.instance.ChangeSelectedProfileId(saveSlot.GetProfileId());
+            DataPersistenceManager.instance.NewGame();
+            SaveGameAndLoadScene();
+        }        
+    }
 
+    private void SaveGameAndLoadScene()
+    {
         //save the game anytime before loading the scene
         DataPersistenceManager.instance.SaveGame();
         
         SceneManager.LoadSceneAsync("Scene01");
+    }
+
+    public void OnClearClicked(SaveSlot saveSlot)
+    {
+        DisableMenuButtons();
+        confirmationPopupMenu.ActivateMenu(
+            "Are you sure you want to delete this saved data?",
+            () =>
+            {
+                DataPersistenceManager.instance.DeleteProfileData(saveSlot.GetProfileId());
+                ActivateMenu(isLoadingGame);
+            },
+            () =>
+            {
+                ActivateMenu(isLoadingGame);
+            }
+        );
     }
 
     public void OnBackClicked()
@@ -51,6 +96,8 @@ public class SaveSlotsMenu : Menu
         this.isLoadingGame = isLoadingGame;
 
         Dictionary<string, GameData> profilesGameData = DataPersistenceManager.instance.GetAllProfilesGameData();
+
+        backButton.interactable = true;
 
         GameObject firstSelectedData = backButton.gameObject;
 
@@ -73,7 +120,8 @@ public class SaveSlotsMenu : Menu
                 }
             }
         }
-        StartCoroutine(SelectFirstSelected(firstSelectedData));
+        Button firstSelectedButton = firstSelectedData.GetComponent<Button>();
+        SelectFirstSelected(firstSelectedButton);
     }
 
     public void DeactivateMenu()

@@ -15,12 +15,17 @@ public class DataPersistenceManager : MonoBehaviour
     [SerializeField] private string fileName;
     [SerializeField] private bool useEncryption = false;
 
+    [Header("Auto Saving Configation")]
+    [SerializeField] private float autoSaveTimeSeconds = 60f;
+
     private GameData gameData;
 
     private List<IDataPersistence> dataPersistenceObjects;
     private FileDataHandler dataHandler;
 
     private string selectedProfileId = "";
+
+    private Coroutine autoSaveCoroutine;
 
     public static DataPersistenceManager instance { get; private set; }
     private void Awake()
@@ -41,13 +46,7 @@ public class DataPersistenceManager : MonoBehaviour
 
         dataHandler = new FileDataHandler(Application.persistentDataPath, fileName, useEncryption);
 
-        selectedProfileId = dataHandler.GetMostRecentlySavedProfileId();
-        
-        if (overrideSelectedProfileId)
-        {
-            selectedProfileId = testSelectedProfileId;
-            Debug.LogWarning($"Overrode selected profile ID to: {selectedProfileId}");
-        }
+        InitializeSelectedProfileId();
     }
     private void OnEnable()
     {
@@ -62,6 +61,13 @@ public class DataPersistenceManager : MonoBehaviour
     {
         dataPersistenceObjects = FindAllDataPersistenceObjects();
         LoadGame();
+
+        // start up the auto-save coroutine if persistence is enabled
+        if (autoSaveCoroutine != null)
+        {
+            StopCoroutine(autoSaveCoroutine);
+        }
+        autoSaveCoroutine = StartCoroutine(AutoSaveCoroutine());
     }
 
     public void ChangeSelectedProfileId(string newProfileId)
@@ -69,6 +75,24 @@ public class DataPersistenceManager : MonoBehaviour
         selectedProfileId = newProfileId;
 
         LoadGame();
+    }
+
+    public void DeleteProfileData(string profileId)
+    {
+        dataHandler.Delete(profileId);
+
+        InitializeSelectedProfileId();
+        LoadGame();
+    }
+    private void InitializeSelectedProfileId()
+    {
+        selectedProfileId = dataHandler.GetMostRecentlySavedProfileId();
+
+        if (overrideSelectedProfileId)
+        {
+            selectedProfileId = testSelectedProfileId;
+            Debug.LogWarning($"Overrode selected profile ID to: {selectedProfileId}");
+        }
     }
 
     public void NewGame()
@@ -139,7 +163,7 @@ public class DataPersistenceManager : MonoBehaviour
     private List<IDataPersistence> FindAllDataPersistenceObjects()
     {
         IEnumerable<IDataPersistence> dataPersistenceObjects =
-            FindObjectsOfType<MonoBehaviour>().OfType<IDataPersistence>();
+            FindObjectsOfType<MonoBehaviour>(true).OfType<IDataPersistence>();
 
         return new List<IDataPersistence>(dataPersistenceObjects);
     }
@@ -148,9 +172,19 @@ public class DataPersistenceManager : MonoBehaviour
     {
         return gameData != null;
     }
-    
+
     public Dictionary<string, GameData> GetAllProfilesGameData()
     {
         return dataHandler.LoadAllProfiles();
+    }
+    
+    private IEnumerator AutoSaveCoroutine()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(autoSaveTimeSeconds);
+            SaveGame();
+            Debug.Log("Auto-saved game data.");
+        }
     }
 }
