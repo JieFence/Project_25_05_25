@@ -15,4 +15,4 @@ EditorBuildSettings:
     path: Assets/Scenes/Scene_ScriptableObject.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
-    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: df0b190b1126a454d8e80233f6f2def8, type: 3}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 5274711243693a74e839e0160227c793, type: 3}
