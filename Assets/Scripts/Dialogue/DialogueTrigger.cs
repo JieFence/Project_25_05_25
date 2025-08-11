@@ -20,14 +20,15 @@ public class DialogueTrigger : MonoBehaviour
 
     private void Update()
     {
-        if (playerInRange)
+        if (playerInRange && !DialogueManager.GetInstance().isDialoguePlaying)
         {
             visualCue.SetActive(true);
 
-            if (Keyboard.current.fKey.wasPressedThisFrame)
+            if (InputManager.instance.GetInteractPressed())
             {
-                Debug.Log("Dialogue Triggered" + "\n" + inkJSON.text);
-            }
+                Debug.Log("Interact Pressed");
+                DialogueManager.GetInstance().EnterDialogueMode(inkJSON);
+            } 
         }
         else
         {
