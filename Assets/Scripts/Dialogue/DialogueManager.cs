@@ -6,13 +6,21 @@ using Ink.Runtime;
 using System;
 using UnityEngine.EventSystems;
 
+
 public class DialogueManager : MonoBehaviour
 {
 
 
     [Header("Dialogue UI")]
     [SerializeField] private GameObject dialoguePanel;
+    [SerializeField] private GameObject continueIcon;
+
     [SerializeField] private TextMeshProUGUI dialogueText;
+    [SerializeField] private TextMeshProUGUI displayNameText;
+
+    [Header("Load Globals JSON")]
+    [SerializeField] private TextAsset loadGlobalsJSON;
+
 
     [Header("Choices UI")]
     [SerializeField] private GameObject[] choices;
@@ -21,8 +29,16 @@ public class DialogueManager : MonoBehaviour
     private Story currentStory;
     public bool isDialoguePlaying { get; private set; }
 
+    private bool canContinueToNextLine = false;
+    private Coroutine displayLineCoroutine;
 
     private static DialogueManager instance;
+
+    private const string SPEAKER_TAG = "speaker";
+    private const string PORTRAIT_TAG = "portrait";
+    private const string LAYOUT_TAG = "layout";
+
+    private DialogueVariables dialogueVariables;
 
 
     private void Awake()
@@ -36,6 +52,9 @@ public class DialogueManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
+
+        dialogueVariables = new DialogueVariables(loadGlobalsJSON);
+
     }
 
     private void Start()
@@ -59,7 +78,7 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        if (InputManager.instance.GetSubmitPressed())
+        if (currentStory.currentChoices.Count == 0 && canContinueToNextLine && InputManager.instance.GetSubmitPressed())
         {
             Debug.Log("Submit Pressed");
             ContinueStory();
@@ -81,6 +100,12 @@ public class DialogueManager : MonoBehaviour
         isDialoguePlaying = true;
         dialoguePanel.SetActive(true);
 
+        dialogueVariables.StartListening(currentStory);
+
+        // reset portrait,layout,etc.comments.
+        displayNameText.text = "";
+
+
         ContinueStory();
     }
 
@@ -89,24 +114,108 @@ public class DialogueManager : MonoBehaviour
         //如果故事还没讲完，就进入下一个叙述内容。（一行文字，或是）
         if (currentStory.canContinue)
         {
-            Debug.Log("currentStory.canContinue:" + currentStory.canContinue.ToString());
+            if (displayLineCoroutine != null)
+            {
+                StopCoroutine(displayLineCoroutine);
+            }
+            displayLineCoroutine = StartCoroutine(DisplayLine(currentStory.Continue()));
 
-            dialogueText.text = currentStory.Continue();
-            DisplayChoices();
-
-            Debug.Log("currentStory.canContinue:" + currentStory.canContinue.ToString());
-
+            HandleTags(currentStory.currentTags);
         }
         else
         {
-            Debug.Log("currentStory.canContinue:" + currentStory.canContinue.ToString());
             ExitDialogueMode();
         }
     }
-    
+
+    private IEnumerator DisplayLine(string line)
+    {
+        dialogueText.text = line;
+        dialogueText.maxVisibleCharacters = 0;
+
+        continueIcon.SetActive(false);
+        HideChoices();
+
+        bool isAddingRichTextTag = false;
+
+        canContinueToNextLine = false;
+
+        foreach (char letter in line.ToCharArray())
+        {
+            if (InputManager.instance.GetSubmitPressed())
+            {
+                dialogueText.maxVisibleCharacters = line.Length;
+                break;
+            }
+
+            if (letter == '<' || isAddingRichTextTag)
+            {
+                isAddingRichTextTag = true;
+
+                if (letter == '>')
+                {
+                    isAddingRichTextTag = false;
+                }
+            }
+            else
+            {
+                dialogueText.maxVisibleCharacters++;
+                yield return new WaitForSeconds(0.1f);
+            }
+
+        }
+
+        continueIcon.SetActive(true);
+
+        DisplayChoices();
+
+        canContinueToNextLine = true;
+    }
+
+    private void HideChoices()
+    {
+        foreach (GameObject choiceButton in choices)
+        {
+            choiceButton.SetActive(false);
+        }
+    }
+    private void HandleTags(List<String> currentTags)
+    {
+        foreach (string tag in currentTags)
+        {
+            string[] splitTag = tag.Split(":");
+            if (splitTag.Length != 2)
+            {
+                Debug.LogError("Tag could not be appropriately parsed :" + tag);
+            }
+            string tagKey = splitTag[0].Trim();
+            string tagValue = splitTag[1].Trim();
+
+
+            switch (tagKey)
+            {
+                case SPEAKER_TAG:
+                    displayNameText.text = tagValue;
+                    Debug.Log("speaker=" + tagValue);
+                    break;
+                case PORTRAIT_TAG:
+                    Debug.Log("portrait=" + tagValue);
+                    break;
+                case LAYOUT_TAG:
+                    Debug.Log("layout=" + tagValue);
+                    break;
+                default:
+                    Debug.LogWarning("Tag came in but is not currently being handled:" + tag);
+                    break;
+            }
+        }
+    }
+
     private void ExitDialogueMode()
     {
         InputManager.instance.jieFenceInputSystem.Player.Enable();
+
+        dialogueVariables.StopListening(currentStory);
 
         isDialoguePlaying = false;
         dialoguePanel.SetActive(false);
@@ -149,6 +258,26 @@ public class DialogueManager : MonoBehaviour
 
     public void MakeChoice(int choiceIndex)
     {
-        currentStory.ChooseChoiceIndex(choiceIndex);
-    } 
+        if (canContinueToNextLine)
+        {
+            currentStory.ChooseChoiceIndex(choiceIndex);
+            InputManager.instance.RegisterSubmitPressed();
+            ContinueStory();
+        }
+    }
+
+    public Ink.Runtime.Object GetVariableState(string variableName)
+    {
+        Ink.Runtime.Object variableValue = null;
+        dialogueVariables.variables.TryGetValue(variableName, out variableValue);
+        if (variableValue == null)
+        {
+            Debug.LogWarning("Ink Variable was found to be null :" + variableName);
+        }
+        return variableValue;
+    }
+    public void OnApplicationQuit()
+    {
+        dialogueVariables.SaveVariables();
+    }
 }

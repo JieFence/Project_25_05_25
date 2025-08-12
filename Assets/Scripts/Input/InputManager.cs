@@ -54,12 +54,12 @@ public class InputManager : MonoBehaviour
 
     public void Jump(InputAction.CallbackContext context)
     {
-        Debug.Log("Jumping" + "\n" + context.phase + " " + context.time);
+        // Debug.Log("Jumping" + "\n" + context.phase + " " + context.time);
     }
 
     private void IsInteractPressed(InputAction.CallbackContext context)
     {
-        Debug.Log("Interacting"  + context.phase + " " + context.time);
+        // Debug.Log("Interacting"  + context.phase + " " + context.time);
 
         if (context.performed)
         {
@@ -73,7 +73,7 @@ public class InputManager : MonoBehaviour
 
     public void IsSubmitPressed(InputAction.CallbackContext context)
     {
-        Debug.Log("Submitting"  + context.phase + " " + context.time);
+        // Debug.Log("Submitting"  + context.phase + " " + context.time);
         if (context.performed)
         {
             isSubmitPressed = true;
@@ -96,7 +96,10 @@ public class InputManager : MonoBehaviour
         isSubmitPressed = false; // Reset after reading
         return result;
     }
-
+    public void RegisterSubmitPressed() 
+    {
+        isSubmitPressed = false;
+    }
 
 
 }
