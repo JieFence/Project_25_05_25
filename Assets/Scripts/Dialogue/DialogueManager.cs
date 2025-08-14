@@ -39,6 +39,7 @@ public class DialogueManager : MonoBehaviour
     private const string LAYOUT_TAG = "layout";
 
     private DialogueVariables dialogueVariables;
+    private InkExternalFunction inkExternalFunction;
 
 
     private void Awake()
@@ -54,6 +55,7 @@ public class DialogueManager : MonoBehaviour
         }
 
         dialogueVariables = new DialogueVariables(loadGlobalsJSON);
+        inkExternalFunction = new InkExternalFunction();
 
     }
 
@@ -101,6 +103,7 @@ public class DialogueManager : MonoBehaviour
         dialoguePanel.SetActive(true);
 
         dialogueVariables.StartListening(currentStory);
+        inkExternalFunction.Bind(currentStory);
 
         // reset portrait,layout,etc.comments.
         displayNameText.text = "";
@@ -216,6 +219,7 @@ public class DialogueManager : MonoBehaviour
         InputManager.instance.jieFenceInputSystem.Player.Enable();
 
         dialogueVariables.StopListening(currentStory);
+        inkExternalFunction.UnBind(currentStory);
 
         isDialoguePlaying = false;
         dialoguePanel.SetActive(false);

@@ -44,13 +44,36 @@ public class InputManager : MonoBehaviour
         jieFenceInputSystem.Player.Interact.canceled += IsInteractPressed;
 
         jieFenceInputSystem.UI.Submit.performed += IsSubmitPressed;
+        jieFenceInputSystem.UI.Submit.performed += SubmitPressed;//
         jieFenceInputSystem.UI.Submit.canceled += IsSubmitPressed;
+
     }
     private void FixedUpdate()
     {
         moveVector2 = jieFenceInputSystem.Player.Move.ReadValue<Vector2>();
     }
 
+
+    public void MovePressed(InputAction.CallbackContext context)
+    {
+        if (context.performed || context.canceled)
+        {
+            GameEventsManager.instance.inputEvents.MovePressed(context.ReadValue<Vector2>());
+        }
+    }
+
+    public void SubmitPressed(InputAction.CallbackContext context)
+    {
+        GameEventsManager.instance.inputEvents.SubmitPressed();
+    }
+
+    public void QuestLogTogglePressed(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            GameEventsManager.instance.inputEvents.QuestLogTogglePressed();
+        }
+    }
 
     public void Jump(InputAction.CallbackContext context)
     {
@@ -96,10 +119,8 @@ public class InputManager : MonoBehaviour
         isSubmitPressed = false; // Reset after reading
         return result;
     }
-    public void RegisterSubmitPressed() 
+    public void RegisterSubmitPressed()
     {
         isSubmitPressed = false;
     }
-
-
 }
