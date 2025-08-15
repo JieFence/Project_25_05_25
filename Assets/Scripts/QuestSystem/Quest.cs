@@ -7,14 +7,35 @@ public class Quest
     public QuestInfoSO info;
 
     public QuestState state;
-
     private int currentQuestStepIndex;
+    private QuestStepState[] questStepStates;
 
     public Quest(QuestInfoSO questInfoSO)
     {
         this.info = questInfoSO;
         this.state = QuestState.REQUIREMENTS_NOT_MET;
         this.currentQuestStepIndex = 0;
+        this.questStepStates = new QuestStepState[info.questStepPrefabs.Length];
+
+        for (int i = 0; i < questStepStates.Length; i++)
+        {
+            questStepStates[i] = new QuestStepState();
+        }
+    }
+    public Quest(QuestInfoSO questInfo, QuestState questState, int currentQuestStepIndex, QuestStepState[] questStepStates)
+    {
+        this.info = questInfo;
+        this.state = questState;
+        this.currentQuestStepIndex = currentQuestStepIndex;
+        this.questStepStates = questStepStates;
+
+        if (this.questStepStates.Length != this.info.questStepPrefabs.Length)
+        {
+            Debug.LogWarning("Quest Step Prefabs and Quest Step States are" +
+            "of different lengths. This idicates something changed" +
+            "with the Questinfo and the saved data is now out of sync" +
+            "Reset your data - as this might cause issues. Quest Id:" + this.info.id);
+        }
     }
 
     public void MoveToNextStep()
@@ -34,7 +55,7 @@ public class Quest
             QuestStep questStep = Object.Instantiate<GameObject>(questStepPrefab, parentTransform)
             .GetComponent<QuestStep>();
 
-            questStep.IntializeQuestStep(info.id);
+            questStep.IntializeQuestStep(info.id, currentQuestStepIndex, questStepStates[currentQuestStepIndex].state);
         }
     }
 
@@ -50,5 +71,57 @@ public class Quest
             Debug.Log("Tried to get quest step prefab, but stepIndex was out of range");
         }
         return questStepPrefab;
+    }
+
+
+    public void StoreQuestStepState(QuestStepState questStepState, int stepIndex)
+    {
+        if (stepIndex < questStepStates.Length)
+        {
+            questStepStates[stepIndex].state = questStepState.state;
+            questStepStates[stepIndex].status = questStepState.status;
+        }
+        else
+        {
+            Debug.LogWarning("Tried to access quest step data ,but stepIndex was out of range:"
+            + "Quest Id =" + info.id + ",Step Index=" + stepIndex);
+        }
+    }
+
+    public QuestData GetQuestData()
+    {
+        return new QuestData(state,currentQuestStepIndex,questStepStates);
+    }
+    public string GetFullStatusText()
+    {
+        string fullStatus = "";
+        if (state == QuestState.REQUIREMENTS_NOT_MET)
+        {
+            fullStatus = "Requirements are not ye met to start this quest.";
+        }
+        else if (state == QuestState.CAN_START)
+        {
+            fullStatus = "This quest can be started!";
+        }
+        else
+        {
+            for (int i = 0; i < currentQuestStepIndex; i++)
+            {
+                fullStatus += "<s>" + questStepStates[i].status + "</s>\n";
+            }
+            if (CurrentStepExists())
+            {
+                fullStatus += questStepStates[currentQuestStepIndex].status;
+            }
+            if (state == QuestState.CAN_FINISH)
+            {
+                fullStatus += "The quest is ready to be turned in";
+            }
+            else if (state == QuestState.FINISHED)
+            {
+                fullStatus += "The quest has been completed!";
+            }
+        }
+        return fullStatus;
     }
 }

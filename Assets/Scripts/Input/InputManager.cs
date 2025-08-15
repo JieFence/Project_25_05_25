@@ -42,6 +42,7 @@ public class InputManager : MonoBehaviour
         jieFenceInputSystem.Player.Jump.performed += Jump;
         jieFenceInputSystem.Player.Interact.performed += IsInteractPressed;
         jieFenceInputSystem.Player.Interact.canceled += IsInteractPressed;
+        jieFenceInputSystem.Player.QuestLogToggle.performed += QuestLogTogglePressed;//
 
         jieFenceInputSystem.UI.Submit.performed += IsSubmitPressed;
         jieFenceInputSystem.UI.Submit.performed += SubmitPressed;//
@@ -69,10 +70,7 @@ public class InputManager : MonoBehaviour
 
     public void QuestLogTogglePressed(InputAction.CallbackContext context)
     {
-        if (context.started)
-        {
-            GameEventsManager.instance.inputEvents.QuestLogTogglePressed();
-        }
+        GameEventsManager.instance.inputEvents.QuestLogTogglePressed();
     }
 
     public void Jump(InputAction.CallbackContext context)
