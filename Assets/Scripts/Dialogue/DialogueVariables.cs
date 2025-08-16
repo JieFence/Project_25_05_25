@@ -34,13 +34,12 @@ public class DialogueVariables
         {
             VariableToStory(globalVariablesStory);
             PlayerPrefs.SetString(saveVariableKey, globalVariablesStory.state.ToJson());
-
         }
     }
 
     public void StartListening(Story story)
     {
-        VariableToStory(story);
+        VariableToStory(story);//将C#的字典覆写到ink中，然后监听ink中全局变量的改变。
         story.variablesState.variableChangedEvent += VariableChanged;
     }
     public void StopListening(Story story)

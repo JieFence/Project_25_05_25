@@ -16,7 +16,6 @@ public class QuestManager : MonoBehaviour
     private void Awake()
     {
         questMap = CreateQuestMap();
-
     }
 
     private void OnEnable()
@@ -160,7 +159,6 @@ public class QuestManager : MonoBehaviour
         {
             Debug.LogError("ID not found in the Quest Map" + id);
         }
-
         return quest;
     }
 

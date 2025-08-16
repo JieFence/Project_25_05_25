@@ -99,6 +99,7 @@ public class DialogueManager : MonoBehaviour
 
         //
         currentStory = new Story(inkJson.text);
+        //UI显示
         isDialoguePlaying = true;
         dialoguePanel.SetActive(true);
 
@@ -221,6 +222,7 @@ public class DialogueManager : MonoBehaviour
         dialogueVariables.StopListening(currentStory);
         inkExternalFunction.UnBind(currentStory);
 
+        //UI显示
         isDialoguePlaying = false;
         dialoguePanel.SetActive(false);
         dialogueText.text = string.Empty;
